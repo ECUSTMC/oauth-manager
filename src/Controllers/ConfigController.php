@@ -12,13 +12,13 @@ class ConfigController extends Controller
 {
     public function render(): View
     {
-        $cleanupForm = Option::form('cleanup', trans('OAuthRecord::config.title'), function (OptionForm $form) {
-            $form->checkbox('oauth_record_auto_cleanup', trans('OAuthRecord::config.auto-cleanup.title'))
-                ->label(trans('OAuthRecord::config.auto-cleanup.label'))
-                ->description(trans('OAuthRecord::config.auto-cleanup.description'));
-            $form->checkbox('oauth_record_clean_revoked', trans('OAuthRecord::config.clean-revoked.title'))
-                ->label(trans('OAuthRecord::config.clean-revoked.label'))
-                ->description(trans('OAuthRecord::config.clean-revoked.description'));
+        $cleanupForm = Option::form('cleanup', trans('OAuthRecord::oauth-record.config.title'), function (OptionForm $form) {
+            $form->checkbox('oauth_record_auto_cleanup', trans('OAuthRecord::oauth-record.config.auto-cleanup.title'))
+                ->label(trans('OAuthRecord::oauth-record.config.auto-cleanup.label'))
+                ->description(trans('OAuthRecord::oauth-record.config.auto-cleanup.description'));
+            $form->checkbox('oauth_record_clean_revoked', trans('OAuthRecord::oauth-record.config.clean-revoked.title'))
+                ->label(trans('OAuthRecord::oauth-record.config.clean-revoked.label'))
+                ->description(trans('OAuthRecord::oauth-record.config.clean-revoked.description'));
         })->handle();
 
         // Show statistics about revoked tokens
@@ -26,7 +26,7 @@ class ConfigController extends Controller
         $revokedRefreshTokenCount = DB::table('oauth_refresh_tokens')->where('revoked', true)->count();
         $revokedAuthCodeCount = DB::table('oauth_auth_codes')->where('revoked', true)->count();
 
-        $cleanupForm->addMessage(trans('OAuthRecord::config.stats', [
+        $cleanupForm->addMessage(trans('OAuthRecord::oauth-record.config.stats', [
             'tokens' => $revokedTokenCount,
             'refresh' => $revokedRefreshTokenCount,
             'codes' => $revokedAuthCodeCount,
