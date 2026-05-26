@@ -49,7 +49,7 @@ config:
       title: OAuth App Hall
       label: Enable app hall page
       description: Allow users to browse all available OAuth applications. When disabled, the sidebar menu will be hidden but existing routes remain accessible.
-  title: Token Cleanup
+  title: Plugin Settings
   auto-cleanup:
     title: Auto Cleanup Redundant Tokens
     label: Enable auto cleanup
