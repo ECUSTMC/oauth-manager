@@ -15,6 +15,15 @@ class ConfigController extends Controller
 {
     public function render(): View
     {
+        $generalForm = Option::form('general', trans('OAuthRecord::oauth-record.config.general.title'), function (OptionForm $form) {
+            $form->checkbox('oauth_record_enable_auth_record', trans('OAuthRecord::oauth-record.config.general.enable-auth-record.title'))
+                ->label(trans('OAuthRecord::oauth-record.config.general.enable-auth-record.label'))
+                ->description(trans('OAuthRecord::oauth-record.config.general.enable-auth-record.description'));
+            $form->checkbox('oauth_record_enable_app_hall', trans('OAuthRecord::oauth-record.config.general.enable-app-hall.title'))
+                ->label(trans('OAuthRecord::oauth-record.config.general.enable-app-hall.label'))
+                ->description(trans('OAuthRecord::oauth-record.config.general.enable-app-hall.description'));
+        })->handle();
+
         $cleanupForm = Option::form('cleanup', trans('OAuthRecord::oauth-record.config.title'), function (OptionForm $form) {
             $form->checkbox('oauth_record_auto_cleanup', trans('OAuthRecord::oauth-record.config.auto-cleanup.title'))
                 ->label(trans('OAuthRecord::oauth-record.config.auto-cleanup.label'))
@@ -43,7 +52,7 @@ class ConfigController extends Controller
         $redundantCount = $this->countRedundantTokens();
 
         return view('OAuthRecord::config', [
-            'forms' => ['cleanup' => $cleanupForm],
+            'forms' => ['general' => $generalForm, 'cleanup' => $cleanupForm],
             'has_revoked' => ($revokedTokenCount + $revokedRefreshTokenCount + $revokedAuthCodeCount) > 0,
             'has_redundant' => $redundantCount > 0,
             'redundant_count' => $redundantCount,

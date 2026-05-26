@@ -7,6 +7,8 @@ use App\Services\Facades\Option;
 return [
     PluginWasEnabled::class => function () {
         $items = [
+            'oauth_record_enable_auth_record' => 'true',
+            'oauth_record_enable_app_hall' => 'true',
             'oauth_record_auto_cleanup' => 'false',
             'oauth_record_clean_revoked' => 'false',
         ];

@@ -39,6 +39,16 @@ scopes:
   offline_access: 离线访问
 
 config:
+  general:
+    title: 功能开关
+    enable-auth-record:
+      title: OAuth 授权记录
+      label: 启用授权记录页面
+      description: 允许用户查看自己的 OAuth 授权记录并取消授权。关闭后侧边栏菜单将隐藏，但已有路由仍可访问。
+    enable-app-hall:
+      title: OAuth 应用大厅
+      label: 启用应用大厅页面
+      description: 允许用户浏览所有可用的 OAuth 应用。关闭后侧边栏菜单将隐藏，但已有路由仍可访问。
   title: 令牌清理配置
   auto-cleanup:
     title: 自动清理冗余令牌

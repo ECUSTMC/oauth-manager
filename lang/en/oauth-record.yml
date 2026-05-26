@@ -39,6 +39,16 @@ scopes:
   offline_access: Offline access
 
 config:
+  general:
+    title: Feature Toggle
+    enable-auth-record:
+      title: OAuth Authorization Records
+      label: Enable authorization records page
+      description: Allow users to view their OAuth authorization records and revoke authorizations. When disabled, the sidebar menu will be hidden but existing routes remain accessible.
+    enable-app-hall:
+      title: OAuth App Hall
+      label: Enable app hall page
+      description: Allow users to browse all available OAuth applications. When disabled, the sidebar menu will be hidden but existing routes remain accessible.
   title: Token Cleanup Settings
   auto-cleanup:
     title: Auto Cleanup Redundant Tokens

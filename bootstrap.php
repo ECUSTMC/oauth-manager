@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 return function () {
     Hook::addRoute(function () {
+        // OAuth authorization records
         Route::namespace('OAuthRecord\Controllers')
             ->prefix('user/oauth-record')
             ->middleware(['web', 'authorize', 'verified'])
@@ -14,7 +15,7 @@ return function () {
                 Route::post('revoke-client/{clientId}', 'OAuthRecordController@revokeClient');
             });
 
-        // OAuth App Hall (public, login required)
+        // OAuth App Hall
         Route::namespace('OAuthRecord\Controllers')
             ->prefix('oauth-apps')
             ->middleware(['web', 'authorize'])
@@ -32,15 +33,19 @@ return function () {
             });
     });
 
-    Hook::addMenuItem('user', 5, [
-        'title' => 'OAuthRecord::oauth-record.title',
-        'link'  => 'user/oauth-record',
-        'icon'  => 'fa-key',
-    ]);
+    if (option('oauth_record_enable_auth_record', true)) {
+        Hook::addMenuItem('user', 5, [
+            'title' => 'OAuthRecord::oauth-record.title',
+            'link'  => 'user/oauth-record',
+            'icon'  => 'fa-key',
+        ]);
+    }
 
-    Hook::addMenuItem('explore', 0, [
-        'title' => 'OAuthRecord::oauth-record.hall-title',
-        'link'  => 'oauth-apps',
-        'icon'  => 'fa-th-large',
-    ]);
+    if (option('oauth_record_enable_app_hall', true)) {
+        Hook::addMenuItem('explore', 0, [
+            'title' => 'OAuthRecord::oauth-record.hall-title',
+            'link'  => 'oauth-apps',
+            'icon'  => 'fa-th-large',
+        ]);
+    }
 };
