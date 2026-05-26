@@ -6,6 +6,7 @@ use Auth;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Passport\Token;
 
 class OAuthRecordController
@@ -77,11 +78,7 @@ class OAuthRecordController
         }
 
         $token->revoke();
-
-        // Also revoke associated refresh tokens
-        DB::table('oauth_refresh_tokens')
-            ->where('access_token_id', $token->id)
-            ->update(['revoked' => true]);
+        $this->revokeRefreshTokens($token->id);
 
         return json(trans('OAuthRecord::oauth-record.revoke-success'), 0);
     }
@@ -101,13 +98,21 @@ class OAuthRecordController
 
         foreach ($tokens as $token) {
             $token->revoke();
-
-            DB::table('oauth_refresh_tokens')
-                ->where('access_token_id', $token->id)
-                ->update(['revoked' => true]);
+            $this->revokeRefreshTokens($token->id);
         }
 
         return json(trans('OAuthRecord::oauth-record.revoke-success'), 0);
+    }
+
+    /**
+     * Revoke refresh tokens associated with the given access token ID.
+     */
+    protected function revokeRefreshTokens(string $accessTokenId): void
+    {
+        $connection = $this->getPassportConnection();
+        $connection->table('oauth_refresh_tokens')
+            ->where('access_token_id', $accessTokenId)
+            ->update(['revoked' => true]);
     }
 
     /**
@@ -139,9 +144,7 @@ class OAuthRecordController
             // Keep the first (latest) one, revoke the rest
             $tokens->skip(1)->each(function ($token) {
                 $token->revoke();
-                DB::table('oauth_refresh_tokens')
-                    ->where('access_token_id', $token->id)
-                    ->update(['revoked' => true]);
+                $this->revokeRefreshTokens($token->id);
             });
         }
     }
@@ -151,6 +154,8 @@ class OAuthRecordController
      */
     protected function deleteRevokedTokens(int $userId): void
     {
+        $connection = $this->getPassportConnection();
+
         // Get IDs of revoked access tokens for this user
         $revokedTokenIds = Token::where('user_id', $userId)
             ->where('revoked', true)
@@ -159,14 +164,32 @@ class OAuthRecordController
 
         if (!empty($revokedTokenIds)) {
             // Delete associated refresh tokens first
-            DB::table('oauth_refresh_tokens')
+            $connection->table('oauth_refresh_tokens')
                 ->whereIn('access_token_id', $revokedTokenIds)
                 ->delete();
 
             // Delete the access tokens
-            DB::table('oauth_access_tokens')
+            $connection->table('oauth_access_tokens')
                 ->whereIn('id', $revokedTokenIds)
                 ->delete();
         }
+
+        // Also clean up revoked auth codes for this user
+        if (Schema::connection($connection->getName())->hasTable('oauth_auth_codes')) {
+            $connection->table('oauth_auth_codes')
+                ->where('user_id', $userId)
+                ->where('revoked', true)
+                ->delete();
+        }
+    }
+
+    /**
+     * Get the database connection used by Passport.
+     */
+    protected function getPassportConnection()
+    {
+        $connectionName = config('passport.storage.database.connection');
+
+        return $connectionName ? DB::connection($connectionName) : DB::connection();
     }
 }

@@ -22,9 +22,12 @@ class ConfigController extends Controller
         })->handle();
 
         // Show statistics about revoked tokens
-        $revokedTokenCount = DB::table('oauth_access_tokens')->where('revoked', true)->count();
-        $revokedRefreshTokenCount = DB::table('oauth_refresh_tokens')->where('revoked', true)->count();
-        $revokedAuthCodeCount = DB::table('oauth_auth_codes')->where('revoked', true)->count();
+        $connectionName = config('passport.storage.database.connection');
+        $db = $connectionName ? DB::connection($connectionName) : DB::connection();
+
+        $revokedTokenCount = $db->table('oauth_access_tokens')->where('revoked', true)->count();
+        $revokedRefreshTokenCount = $db->table('oauth_refresh_tokens')->where('revoked', true)->count();
+        $revokedAuthCodeCount = $db->table('oauth_auth_codes')->where('revoked', true)->count();
 
         $cleanupForm->addMessage(trans('OAuthRecord::oauth-record.config.stats', [
             'tokens' => $revokedTokenCount,
