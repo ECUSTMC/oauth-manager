@@ -14,6 +14,16 @@ class OAuthRecordController
     {
         $user = Auth::user();
 
+        // Auto cleanup: if enabled, revoke redundant tokens keeping only the latest one per client
+        if (option('oauth_record_auto_cleanup')) {
+            $this->cleanupRedundantTokens($user->uid);
+        }
+
+        // Auto cleanup: if enabled, physically delete revoked tokens
+        if (option('oauth_record_clean_revoked')) {
+            $this->deleteRevokedTokens($user->uid);
+        }
+
         // Get all non-revoked, non-expired access tokens for this user
         // grouped by client, excluding personal access tokens
         $authorizations = Token::where('user_id', $user->uid)
@@ -98,5 +108,65 @@ class OAuthRecordController
         }
 
         return json(trans('OAuthRecord::oauth-record.revoke-success'), 0);
+    }
+
+    /**
+     * Revoke redundant tokens for a user, keeping only the latest one per client.
+     */
+    protected function cleanupRedundantTokens(int $userId): void
+    {
+        // Find clients with more than one active token
+        $clientTokenCounts = Token::where('user_id', $userId)
+            ->where('revoked', false)
+            ->whereNotIn('client_id', function ($query) {
+                $query->select('id')
+                    ->from('oauth_clients')
+                    ->where('personal_access_client', true);
+            })
+            ->selectRaw('client_id, COUNT(*) as cnt')
+            ->groupBy('client_id')
+            ->havingRaw('cnt > 1')
+            ->get();
+
+        foreach ($clientTokenCounts as $row) {
+            // Get all active tokens for this client, sorted by created_at desc
+            $tokens = Token::where('user_id', $userId)
+                ->where('client_id', $row->client_id)
+                ->where('revoked', false)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Keep the first (latest) one, revoke the rest
+            $tokens->skip(1)->each(function ($token) {
+                $token->revoke();
+                DB::table('oauth_refresh_tokens')
+                    ->where('access_token_id', $token->id)
+                    ->update(['revoked' => true]);
+            });
+        }
+    }
+
+    /**
+     * Physically delete revoked tokens for a user from the database.
+     */
+    protected function deleteRevokedTokens(int $userId): void
+    {
+        // Get IDs of revoked access tokens for this user
+        $revokedTokenIds = Token::where('user_id', $userId)
+            ->where('revoked', true)
+            ->pluck('id')
+            ->toArray();
+
+        if (!empty($revokedTokenIds)) {
+            // Delete associated refresh tokens first
+            DB::table('oauth_refresh_tokens')
+                ->whereIn('access_token_id', $revokedTokenIds)
+                ->delete();
+
+            // Delete the access tokens
+            DB::table('oauth_access_tokens')
+                ->whereIn('id', $revokedTokenIds)
+                ->delete();
+        }
     }
 }

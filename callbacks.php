@@ -2,13 +2,23 @@
 
 use App\Events\PluginWasDisabled;
 use App\Events\PluginWasEnabled;
+use App\Services\Facades\Option;
 
 return [
     PluginWasEnabled::class => function () {
-        // Nothing special to do on enable
+        $items = [
+            'oauth_record_auto_cleanup' => 'false',
+            'oauth_record_clean_revoked' => 'false',
+        ];
+
+        foreach ($items as $key => $value) {
+            if (!Option::get($key)) {
+                Option::set($key, $value);
+            }
+        }
     },
 
     PluginWasDisabled::class => function () {
-        // Nothing special to do on disable
+        // Keep options on disable so settings are preserved if re-enabled
     },
 ];

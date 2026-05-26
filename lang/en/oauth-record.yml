@@ -9,3 +9,15 @@ confirm-revoke: Are you sure you want to revoke this authorization? The applicat
 revoke-success: Authorization revoked successfully
 revoke-fail: Failed to revoke authorization
 token-not-found: Authorization record not found
+
+config:
+  title: Token Cleanup Settings
+  auto-cleanup:
+    title: Auto Cleanup Redundant Tokens
+    label: Enable auto cleanup
+    description: Keep only the latest active token per client and revoke the rest. Prevents accumulation of redundant tokens from repeated authorizations.
+  clean-revoked:
+    title: Auto Delete Revoked Tokens
+    label: Enable auto delete
+    description: Physically delete revoked tokens from the database when viewing authorization records, freeing up storage space.
+  stats: "Revoked records in database: Access Token: :tokens, Refresh Token: :refresh, Auth Code: :codes"
