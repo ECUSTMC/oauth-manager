@@ -46,7 +46,9 @@ class OAuthRecordController
                 $client = $tokens->first()->client;
                 // scopes is already cast to array by Token model
                 $scopes = $tokens->flatMap(fn ($t) => $t->scopes ?: [])->unique()->values()->map(function ($scope) {
-                    $key = 'OAuthRecord::oauth-record.scopes.'.$scope;
+                    // Replace dots with underscores for translation key lookup,
+                    // because Laravel treats dots as nested array separators
+                    $key = 'OAuthRecord::oauth-record.scopes.'.str_replace('.', '_', $scope);
                     $translated = trans($key);
                     // If no translation found, fall back to original scope name
                     return [

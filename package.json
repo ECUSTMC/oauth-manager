@@ -1,6 +1,6 @@
 {
   "name": "oauth-record",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "title": "OAuth 授权记录",
   "description": "OAuthRecord::oauth-record.description",
   "namespace": "OAuthRecord",
