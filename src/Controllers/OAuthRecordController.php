@@ -45,7 +45,15 @@ class OAuthRecordController
             ->map(function ($tokens) {
                 $client = $tokens->first()->client;
                 // scopes is already cast to array by Token model
-                $scopes = $tokens->flatMap(fn ($t) => $t->scopes ?: [])->unique()->values()->toArray();
+                $scopes = $tokens->flatMap(fn ($t) => $t->scopes ?: [])->unique()->values()->map(function ($scope) {
+                    $key = 'OAuthRecord::oauth-record.scopes.'.$scope;
+                    $translated = trans($key);
+                    // If no translation found, fall back to original scope name
+                    return [
+                        'id' => $scope,
+                        'name' => $translated !== $key ? $translated : $scope,
+                    ];
+                })->values()->toArray();
                 $earliestCreatedAt = $tokens->map(fn ($t) => $t->created_at)->filter()->sort()->first();
                 return [
                     'client_id' => $client->id,

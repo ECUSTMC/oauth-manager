@@ -10,6 +10,27 @@ revoke-success: 已成功取消授权
 revoke-fail: 取消授权失败
 token-not-found: 未找到该授权记录
 
+scopes:
+  User.Read: 读取用户信息
+  Notification.Read: 读取通知
+  Notification.ReadWrite: 读写通知
+  Player.Read: 读取角色信息
+  Player.ReadWrite: 读写角色信息
+  Closet.Read: 读取衣柜
+  Closet.ReadWrite: 读写衣柜
+  UsersManagement.Read: 读取用户管理
+  UsersManagement.ReadWrite: 读写用户管理
+  PlayersManagement.Read: 读取角色管理
+  PlayersManagement.ReadWrite: 读写角色管理
+  ClosetManagement.Read: 读取衣柜管理
+  ClosetManagement.ReadWrite: 读写衣柜管理
+  ReportsManagement.Read: 读取举报管理
+  ReportsManagement.ReadWrite: 读写举报管理
+  openid: OpenID 身份认证
+  profile: 基本资料
+  email: 邮箱地址
+  offline_access: 离线访问
+
 config:
   title: 令牌清理配置
   auto-cleanup:

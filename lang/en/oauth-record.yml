@@ -10,6 +10,27 @@ revoke-success: Authorization revoked successfully
 revoke-fail: Failed to revoke authorization
 token-not-found: Authorization record not found
 
+scopes:
+  User.Read: Read user info
+  Notification.Read: Read notifications
+  Notification.ReadWrite: Read and write notifications
+  Player.Read: Read player info
+  Player.ReadWrite: Read and write player info
+  Closet.Read: Read closet
+  Closet.ReadWrite: Read and write closet
+  UsersManagement.Read: Read user management
+  UsersManagement.ReadWrite: Read and write user management
+  PlayersManagement.Read: Read player management
+  PlayersManagement.ReadWrite: Read and write player management
+  ClosetManagement.Read: Read closet management
+  ClosetManagement.ReadWrite: Read and write closet management
+  ReportsManagement.Read: Read report management
+  ReportsManagement.ReadWrite: Read and write report management
+  openid: OpenID authentication
+  profile: Basic profile
+  email: Email address
+  offline_access: Offline access
+
 config:
   title: Token Cleanup Settings
   auto-cleanup:

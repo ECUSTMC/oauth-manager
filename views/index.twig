@@ -39,7 +39,7 @@
               {% if auth.scopes is not empty %}
               <div class="mt-1">
                 {% for scope in auth.scopes %}
-                <span class="badge badge-info mr-1">{{ scope }}</span>
+                <span class="badge badge-info mr-1" title="{{ scope.id }}">{{ scope.name }}</span>
                 {% endfor %}
               </div>
               {% endif %}
