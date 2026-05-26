@@ -6,6 +6,64 @@
 <div class="row">
   <div class="col-md-6">
     {{ forms.cleanup|raw }}
+
+    {% if has_revoked %}
+    <div class="card card-danger">
+      <div class="card-header">
+        <h3 class="card-title">{{ trans('OAuthRecord::oauth-record.config.cleanup-now.title') }}</h3>
+      </div>
+      <div class="card-body">
+        <p>{{ trans('OAuthRecord::oauth-record.config.cleanup-now.description') }}</p>
+        <button id="btn-cleanup" class="btn btn-danger">
+          <i class="fas fa-trash-alt"></i>
+          {{ trans('OAuthRecord::oauth-record.config.cleanup-now.button') }}
+        </button>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block before_foot %}
+<script>
+(function() {
+  var btn = document.getElementById('btn-cleanup');
+  if (!btn) return;
+
+  btn.addEventListener('click', function() {
+    if (!confirm('{{ trans("OAuthRecord::oauth-record.config.cleanup-now.confirm") }}')) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+
+    fetch('/admin/oauth-record/cleanup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+      if (data.code === 0) {
+        alert(data.message);
+        location.reload();
+      } else {
+        alert(data.message || '{{ trans("OAuthRecord::oauth-record.config.cleanup-now.fail") }}');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> {{ trans("OAuthRecord::oauth-record.config.cleanup-now.button") }}';
+      }
+    })
+    .catch(function() {
+      alert('{{ trans("OAuthRecord::oauth-record.config.cleanup-now.fail") }}');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-trash-alt"></i> {{ trans("OAuthRecord::oauth-record.config.cleanup-now.button") }}';
+    });
+  });
+})();
+</script>
 {% endblock %}

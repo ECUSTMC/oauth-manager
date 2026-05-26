@@ -13,6 +13,14 @@ return function () {
                 Route::post('revoke/{tokenId}', 'OAuthRecordController@revoke');
                 Route::post('revoke-client/{clientId}', 'OAuthRecordController@revokeClient');
             });
+
+        // Admin cleanup route
+        Route::namespace('OAuthRecord\Controllers')
+            ->prefix('admin/oauth-record')
+            ->middleware(['web', 'auth', 'role:admin'])
+            ->group(function () {
+                Route::post('cleanup', 'ConfigController@cleanup');
+            });
     });
 
     Hook::addMenuItem('user', 5, [

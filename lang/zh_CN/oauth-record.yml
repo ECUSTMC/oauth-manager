@@ -19,5 +19,12 @@ config:
   clean-revoked:
     title: 自动删除已吊销令牌
     label: 启用自动删除
-    description: 查看授权记录时自动从数据库中物理删除已吊销的令牌，释放存储空间。
+    description: 用户查看授权记录时自动从数据库中删除该用户已吊销的令牌，释放存储空间。
   stats: "当前数据库中已吊销的记录：Access Token :tokens 条，Refresh Token :refresh 条，Auth Code :codes 条"
+  cleanup-result: "清理完成！已删除 Access Token :tokens 条，Refresh Token :refresh 条，Auth Code :codes 条"
+  cleanup-now:
+    title: 立即清理
+    description: 一键清理全站所有已吊销的令牌记录，释放数据库空间。此操作不可撤销。
+    button: 立即清理全部已吊销记录
+    confirm: 确定要清理全站所有已吊销的令牌记录吗？此操作不可撤销。
+    fail: 清理失败，请重试
