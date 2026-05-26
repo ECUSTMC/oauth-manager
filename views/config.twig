@@ -7,6 +7,21 @@
   <div class="col-md-6">
     {{ forms.cleanup|raw }}
 
+    {% if has_redundant %}
+    <div class="card card-warning">
+      <div class="card-header">
+        <h3 class="card-title">{{ trans('OAuthRecord::oauth-record.config.cleanup-redundant-now.title') }}</h3>
+      </div>
+      <div class="card-body">
+        <p>{{ trans('OAuthRecord::oauth-record.config.cleanup-redundant-now.description', {count: redundant_count}) }}</p>
+        <button id="btn-cleanup-redundant" class="btn btn-warning">
+          <i class="fas fa-broom"></i>
+          {{ trans('OAuthRecord::oauth-record.config.cleanup-redundant-now.button') }}
+        </button>
+      </div>
+    </div>
+    {% endif %}
+
     {% if has_revoked %}
     <div class="card card-danger">
       <div class="card-header">
@@ -28,42 +43,81 @@
 {% block before_foot %}
 <script>
 (function() {
-  var btn = document.getElementById('btn-cleanup');
-  if (!btn) return;
+  // Cleanup revoked tokens
+  var btnCleanup = document.getElementById('btn-cleanup');
+  if (btnCleanup) {
+    btnCleanup.addEventListener('click', function() {
+      if (!confirm('{{ trans("OAuthRecord::oauth-record.config.cleanup-now.confirm") }}')) return;
 
-  btn.addEventListener('click', function() {
-    if (!confirm('{{ trans("OAuthRecord::oauth-record.config.cleanup-now.confirm") }}')) return;
+      btnCleanup.disabled = true;
+      btnCleanup.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
 
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
-
-    fetch('/admin/oauth-record/cleanup', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      credentials: 'same-origin'
-    })
-    .then(function(resp) { return resp.json(); })
-    .then(function(data) {
-      if (data.code === 0) {
-        alert(data.message);
-        location.reload();
-      } else {
-        alert(data.message || '{{ trans("OAuthRecord::oauth-record.config.cleanup-now.fail") }}');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-trash-alt"></i> {{ trans("OAuthRecord::oauth-record.config.cleanup-now.button") }}';
-      }
-    })
-    .catch(function() {
-      alert('{{ trans("OAuthRecord::oauth-record.config.cleanup-now.fail") }}');
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-trash-alt"></i> {{ trans("OAuthRecord::oauth-record.config.cleanup-now.button") }}';
+      fetch('/admin/oauth-record/cleanup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+      })
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        if (data.code === 0) {
+          alert(data.message);
+          location.reload();
+        } else {
+          alert(data.message || '{{ trans("OAuthRecord::oauth-record.config.cleanup-now.fail") }}');
+          btnCleanup.disabled = false;
+          btnCleanup.innerHTML = '<i class="fas fa-trash-alt"></i> {{ trans("OAuthRecord::oauth-record.config.cleanup-now.button") }}';
+        }
+      })
+      .catch(function() {
+        alert('{{ trans("OAuthRecord::oauth-record.config.cleanup-now.fail") }}');
+        btnCleanup.disabled = false;
+        btnCleanup.innerHTML = '<i class="fas fa-trash-alt"></i> {{ trans("OAuthRecord::oauth-record.config.cleanup-now.button") }}';
+      });
     });
-  });
+  }
+
+  // Cleanup redundant tokens
+  var btnRedundant = document.getElementById('btn-cleanup-redundant');
+  if (btnRedundant) {
+    btnRedundant.addEventListener('click', function() {
+      if (!confirm('{{ trans("OAuthRecord::oauth-record.config.cleanup-redundant-now.confirm") }}')) return;
+
+      btnRedundant.disabled = true;
+      btnRedundant.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+
+      fetch('/admin/oauth-record/cleanup-redundant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+      })
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        if (data.code === 0) {
+          alert(data.message);
+          location.reload();
+        } else {
+          alert(data.message || '{{ trans("OAuthRecord::oauth-record.config.cleanup-redundant-now.fail") }}');
+          btnRedundant.disabled = false;
+          btnRedundant.innerHTML = '<i class="fas fa-broom"></i> {{ trans("OAuthRecord::oauth-record.config.cleanup-redundant-now.button") }}';
+        }
+      })
+      .catch(function() {
+        alert('{{ trans("OAuthRecord::oauth-record.config.cleanup-redundant-now.fail") }}');
+        btnRedundant.disabled = false;
+        btnRedundant.innerHTML = '<i class="fas fa-broom"></i> {{ trans("OAuthRecord::oauth-record.config.cleanup-redundant-now.button") }}';
+      });
+    });
+  }
 })();
 </script>
 {% endblock %}

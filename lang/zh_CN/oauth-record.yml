@@ -22,9 +22,16 @@ config:
     description: 用户查看授权记录时自动从数据库中删除该用户已吊销的令牌，释放存储空间。
   stats: "当前数据库中已吊销的记录：Access Token :tokens 条，Refresh Token :refresh 条，Auth Code :codes 条"
   cleanup-result: "清理完成！已删除 Access Token :tokens 条，Refresh Token :refresh 条，Auth Code :codes 条"
+  cleanup-redundant-result: "清理完成！已吊销冗余令牌 :count 条"
   cleanup-now:
-    title: 立即清理
+    title: 清理已吊销记录
     description: 一键清理全站所有已吊销的令牌记录，释放数据库空间。此操作不可撤销。
     button: 立即清理全部已吊销记录
     confirm: 确定要清理全站所有已吊销的令牌记录吗？此操作不可撤销。
+    fail: 清理失败，请重试
+  cleanup-redundant-now:
+    title: 清理冗余令牌
+    description: "当前全站共有 :count 条冗余活跃令牌（同一用户对同一应用存在多个令牌）。点击下方按钮仅保留每个用户每个应用的最新一条令牌，吊销其余冗余令牌。"
+    button: 立即清理冗余令牌
+    confirm: 确定要清理全站所有冗余令牌吗？每个用户每个应用仅保留最新一条令牌，其余将被吊销。
     fail: 清理失败，请重试

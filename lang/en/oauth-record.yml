@@ -22,9 +22,16 @@ config:
     description: Physically delete revoked tokens from the database when a user views their authorization records, freeing up storage space.
   stats: "Revoked records in database: Access Token: :tokens, Refresh Token: :refresh, Auth Code: :codes"
   cleanup-result: "Cleanup complete! Deleted Access Token: :tokens, Refresh Token: :refresh, Auth Code: :codes"
+  cleanup-redundant-result: "Cleanup complete! Revoked :count redundant tokens"
   cleanup-now:
-    title: Cleanup Now
+    title: Cleanup Revoked Records
     description: Clean up all revoked token records across the site. This action cannot be undone.
     button: Cleanup All Revoked Records Now
     confirm: Are you sure you want to clean up all revoked token records? This action cannot be undone.
+    fail: Cleanup failed, please try again
+  cleanup-redundant-now:
+    title: Cleanup Redundant Tokens
+    description: "There are :count redundant active tokens across the site (users with multiple tokens for the same application). Click below to keep only the latest token per user per application and revoke the rest."
+    button: Cleanup Redundant Tokens Now
+    confirm: Are you sure you want to cleanup all redundant tokens? Only the latest token per user per application will be kept; the rest will be revoked.
     fail: Cleanup failed, please try again

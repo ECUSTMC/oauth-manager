@@ -9,6 +9,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Laravel\Passport\Token;
 
 class ConfigController extends Controller
 {
@@ -38,9 +39,14 @@ class ConfigController extends Controller
             'codes' => $revokedAuthCodeCount,
         ]), 'info');
 
+        // Count redundant tokens (active tokens per client beyond the first one)
+        $redundantCount = $this->countRedundantTokens();
+
         return view('OAuthRecord::config', [
             'forms' => ['cleanup' => $cleanupForm],
             'has_revoked' => ($revokedTokenCount + $revokedRefreshTokenCount + $revokedAuthCodeCount) > 0,
+            'has_redundant' => $redundantCount > 0,
+            'redundant_count' => $redundantCount,
         ]);
     }
 
@@ -88,6 +94,79 @@ class ConfigController extends Controller
             'refresh' => $refreshDeleted,
             'codes' => $codeDeleted,
         ]), 0);
+    }
+
+    /**
+     * Clean up redundant tokens globally, keeping only the latest one per user+client.
+     */
+    public function cleanupRedundant(Request $request): JsonResponse
+    {
+        // Find all user_id + client_id combinations with more than one active token
+        $db = $this->getPassportConnection();
+
+        $personalClientIds = $db->table('oauth_clients')
+            ->where('personal_access_client', true)
+            ->pluck('id')
+            ->toArray();
+
+        $groups = Token::where('revoked', false)
+            ->when(!empty($personalClientIds), function ($query) use ($personalClientIds) {
+                $query->whereNotIn('client_id', $personalClientIds);
+            })
+            ->selectRaw('user_id, client_id, COUNT(*) as cnt')
+            ->groupBy('user_id', 'client_id')
+            ->havingRaw('cnt > 1')
+            ->get();
+
+        $revokedCount = 0;
+
+        foreach ($groups as $group) {
+            // Get all active tokens for this user+client, sorted by created_at desc
+            $tokens = Token::where('user_id', $group->user_id)
+                ->where('client_id', $group->client_id)
+                ->where('revoked', false)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Keep the first (latest), revoke the rest
+            $tokens->skip(1)->each(function ($token) use (&$revokedCount, $db) {
+                $token->revoke();
+                $db->table('oauth_refresh_tokens')
+                    ->where('access_token_id', $token->id)
+                    ->update(['revoked' => true]);
+                $revokedCount++;
+            });
+        }
+
+        return json(trans('OAuthRecord::oauth-record.config.cleanup-redundant-result', [
+            'count' => $revokedCount,
+        ]), 0);
+    }
+
+    /**
+     * Count redundant active tokens globally.
+     */
+    protected function countRedundantTokens(): int
+    {
+        $db = $this->getPassportConnection();
+
+        $personalClientIds = $db->table('oauth_clients')
+            ->where('personal_access_client', true)
+            ->pluck('id')
+            ->toArray();
+
+        $groups = Token::where('revoked', false)
+            ->when(!empty($personalClientIds), function ($query) use ($personalClientIds) {
+                $query->whereNotIn('client_id', $personalClientIds);
+            })
+            ->selectRaw('user_id, client_id, COUNT(*) as cnt')
+            ->groupBy('user_id', 'client_id')
+            ->havingRaw('cnt > 1')
+            ->get();
+
+        return $groups->sum(function ($group) {
+            return $group->cnt - 1;
+        });
     }
 
     protected function getPassportConnection()

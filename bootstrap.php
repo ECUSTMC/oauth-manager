@@ -20,6 +20,7 @@ return function () {
             ->middleware(['web', 'auth', 'role:admin'])
             ->group(function () {
                 Route::post('cleanup', 'ConfigController@cleanup');
+                Route::post('cleanup-redundant', 'ConfigController@cleanupRedundant');
             });
     });
 
