@@ -19,14 +19,12 @@
         <div class="card h-100">
           <div class="card-body">
             <div class="d-flex align-items-center mb-2">
-              <div class="mr-3" style="width: 40px; height: 40px; flex-shrink: 0;">
-                <img class="app-favicon rounded" src="" alt=""
+              <div class="mr-3" style="width: 40px; height: 40px; flex-shrink: 0; position: relative;">
+                <img class="app-favicon rounded" alt=""
                      data-url="{{ app.url }}"
-                     style="width: 40px; height: 40px; display: none; object-fit: contain;"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                     onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                     style="width: 40px; height: 40px; display: none; object-fit: contain; position: absolute; top: 0; left: 0;">
                 <div class="bg-light rounded-circle d-flex align-items-center justify-content-center fallback-icon"
-                     style="width: 40px; height: 40px;">
+                     style="width: 40px; height: 40px; position: absolute; top: 0; left: 0;">
                   <i class="fas fa-plug text-secondary"></i>
                 </div>
               </div>
@@ -94,33 +92,30 @@
 {% block before_foot %}
 <script>
 (function() {
-  // Load favicons with timeout
   var favicons = document.querySelectorAll('.app-favicon');
   var timeout = 5000;
 
   favicons.forEach(function(img) {
     var url = img.dataset.url;
-    if (!url) {
-      img.nextElementSibling.style.display = 'flex';
-      return;
-    }
+    var fallback = img.nextElementSibling;
+
+    if (!url) return;
 
     var faviconUrl = url + '/favicon.ico';
     var timer = setTimeout(function() {
-      img.onerror = null;
       img.onload = null;
-      img.nextElementSibling.style.display = 'flex';
+      img.onerror = null;
     }, timeout);
 
     img.onload = function() {
       clearTimeout(timer);
-      this.style.display = 'block';
-      this.nextElementSibling.style.display = 'none';
+      img.style.display = 'block';
+      fallback.style.display = 'none';
     };
     img.onerror = function() {
       clearTimeout(timer);
-      this.style.display = 'none';
-      this.nextElementSibling.style.display = 'flex';
+      img.style.display = 'none';
+      fallback.style.display = 'flex';
     };
 
     img.src = faviconUrl;
