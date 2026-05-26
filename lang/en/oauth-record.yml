@@ -9,6 +9,12 @@ confirm-revoke: Are you sure you want to revoke this authorization? The applicat
 revoke-success: Authorization revoked successfully
 revoke-fail: Failed to revoke authorization
 token-not-found: Authorization record not found
+hall-title: OAuth App Hall
+hall-empty-title: No Apps
+hall-empty-desc: There are no OAuth applications available
+hall-user-count: ":count user(s)"
+hall-authorized: Authorized
+hall-not-authorized: Not authorized
 
 scopes:
   User_Read: Read user info

@@ -14,6 +14,14 @@ return function () {
                 Route::post('revoke-client/{clientId}', 'OAuthRecordController@revokeClient');
             });
 
+        // OAuth App Hall (public, login required)
+        Route::namespace('OAuthRecord\Controllers')
+            ->prefix('oauth-apps')
+            ->middleware(['web', 'authorize'])
+            ->group(function () {
+                Route::get('', 'AppHallController@index');
+            });
+
         // Admin cleanup route
         Route::namespace('OAuthRecord\Controllers')
             ->prefix('admin/oauth-record')
@@ -28,5 +36,11 @@ return function () {
         'title' => 'OAuthRecord::oauth-record.title',
         'link'  => 'user/oauth-record',
         'icon'  => 'fa-key',
+    ]);
+
+    Hook::addMenuItem('explore', 0, [
+        'title' => 'OAuthRecord::oauth-record.hall-title',
+        'link'  => 'oauth-apps',
+        'icon'  => 'fa-th-large',
     ]);
 };
