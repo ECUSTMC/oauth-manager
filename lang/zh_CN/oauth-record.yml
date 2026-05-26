@@ -1,4 +1,5 @@
-title: OAuth 管理
+title: OAuth 授权记录
+plugin-title: OAuth 管理
 description: 查看 OAuth 授权记录、取消授权，浏览 OAuth 应用大厅
 empty-title: 暂无授权记录
 empty-desc: 没有第三方应用获得你的账户授权

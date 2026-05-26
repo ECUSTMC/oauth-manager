@@ -1,4 +1,5 @@
-title: OAuth Manager
+title: OAuth Authorization Records
+plugin-title: OAuth Manager
 description: View OAuth authorization records, revoke authorizations, and browse the OAuth app hall
 empty-title: No Authorizations
 empty-desc: No third-party applications have been authorized to access your account
