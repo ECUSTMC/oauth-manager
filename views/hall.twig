@@ -24,9 +24,11 @@
                      style="width: 40px; height: 40px; position: absolute; top: 0; left: 0;">
                   <i class="fas fa-plug text-secondary"></i>
                 </div>
+                {% if app.favicon %}
                 <img class="app-favicon rounded" alt=""
-                     data-url="{{ app.url }}"
+                     src="{{ app.favicon }}"
                      style="width: 40px; height: 40px; display: none; object-fit: contain; position: absolute; top: 0; left: 0; z-index: 1; background: #fff; border-radius: 8px;">
+                {% endif %}
               </div>
               <div style="min-width: 0; flex: 1;">
                 <h6 class="mb-0 text-truncate">{{ app.name }}</h6>
@@ -93,30 +95,16 @@
 <script>
 (function() {
   var favicons = document.querySelectorAll('.app-favicon');
-  var timeout = 5000;
 
   favicons.forEach(function(img) {
-    var url = img.dataset.url;
-    var fallback = img.nextElementSibling;
-
-    if (!url) return;
-
-    var faviconUrl = url + '/favicon.ico';
-    var timer = setTimeout(function() {
-      img.onload = null;
-      img.onerror = null;
-    }, timeout);
+    var fallback = img.previousElementSibling;
 
     img.onload = function() {
-      clearTimeout(timer);
       img.style.display = 'block';
     };
     img.onerror = function() {
-      clearTimeout(timer);
       img.style.display = 'none';
     };
-
-    img.src = faviconUrl;
   });
 })();
 </script>
