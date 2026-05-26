@@ -37,14 +37,12 @@ class AppHallController
 
         $apps = $clients->map(function ($client) use ($authorizedClientIds, $creators) {
             $creator = $client->user_id ? $creators->get($client->user_id) : null;
-            $url = $this->extractUrl($client->redirect);
 
             return [
                 'id' => $client->id,
                 'name' => $client->name,
                 'domain' => $this->extractDomain($client->redirect),
-                'url' => $url,
-                'favicon' => $url ? $this->fetchFavicon($url) : null,
+                'url' => $this->extractUrl($client->redirect),
                 'authorized' => in_array($client->id, $authorizedClientIds),
                 'creator' => $creator ? $creator->nickname : null,
                 'user_count' => Token::where('client_id', $client->id)
@@ -55,6 +53,21 @@ class AppHallController
         })->values()->toArray();
 
         return view('OAuthRecord::hall', ['apps' => $apps]);
+    }
+
+    /**
+     * API endpoint: fetch favicon URL for a given site URL.
+     * Returns JSON: { "favicon": "https://..." } or { "favicon": null }
+     */
+    public function favicon()
+    {
+        $url = request()->query('url');
+
+        if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return response()->json(['favicon' => null]);
+        }
+
+        return response()->json(['favicon' => $this->fetchFavicon($url)]);
     }
 
     /**

@@ -24,9 +24,9 @@
                      style="width: 40px; height: 40px; position: absolute; top: 0; left: 0;">
                   <i class="fas fa-plug text-secondary"></i>
                 </div>
-                {% if app.favicon %}
+                {% if app.url %}
                 <img class="app-favicon rounded" alt=""
-                     src="{{ app.favicon }}"
+                     data-url="{{ app.url }}"
                      style="width: 40px; height: 40px; display: none; object-fit: contain; position: absolute; top: 0; left: 0; z-index: 1; background: #fff; border-radius: 8px;">
                 {% endif %}
               </div>
@@ -97,13 +97,39 @@
   var favicons = document.querySelectorAll('.app-favicon');
 
   favicons.forEach(function(img) {
-    var fallback = img.previousElementSibling;
+    var url = img.dataset.url;
+    if (!url) return;
 
-    img.onload = function() {
-      img.style.display = 'block';
-    };
+    function showFavicon(src) {
+      img.onload = function() {
+        img.style.display = 'block';
+      };
+      img.onerror = function() {
+        img.style.display = 'none';
+      };
+      img.src = src;
+      if (img.complete) {
+        img.style.display = img.naturalWidth > 0 ? 'block' : 'none';
+      }
+    }
+
+    // Step 1: Browser tries /favicon.ico directly
+    showFavicon(url + '/favicon.ico');
+
+    // Step 2: If /favicon.ico fails, ask server to parse <link rel="icon">
     img.onerror = function() {
-      img.style.display = 'none';
+      fetch('/oauth-apps/favicon?url=' + encodeURIComponent(url))
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+          if (data.favicon && data.favicon !== (url + '/favicon.ico')) {
+            showFavicon(data.favicon);
+          } else {
+            img.style.display = 'none';
+          }
+        })
+        .catch(function() {
+          img.style.display = 'none';
+        });
     };
   });
 })();

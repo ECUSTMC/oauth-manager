@@ -21,6 +21,7 @@ return function () {
             ->middleware(['web', 'authorize'])
             ->group(function () {
                 Route::get('', 'AppHallController@index');
+                Route::get('favicon', 'AppHallController@favicon');
             });
 
         // Admin cleanup route
