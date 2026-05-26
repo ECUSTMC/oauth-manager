@@ -50,6 +50,7 @@ class OAuthRecordController
                 return [
                     'client_id' => $client->id,
                     'client_name' => $client->name,
+                    'client_domain' => $this->extractDomain($client->redirect),
                     'scopes' => $scopes,
                     'authorized_at' => $earliestCreatedAt
                         ? Carbon::parse($earliestCreatedAt)->toDateTimeString()
@@ -191,5 +192,26 @@ class OAuthRecordController
         $connectionName = config('passport.storage.database.connection');
 
         return $connectionName ? DB::connection($connectionName) : DB::connection();
+    }
+
+    /**
+     * Extract domain from a redirect URL string (may contain multiple URLs separated by comma).
+     */
+    protected function extractDomain(?string $redirect): ?string
+    {
+        if (!$redirect) {
+            return null;
+        }
+
+        // Take the first URL if there are multiple
+        $url = trim(explode(',', $redirect)[0]);
+        $parsed = parse_url($url);
+        $host = $parsed['host'] ?? null;
+
+        if ($host) {
+            return $host;
+        }
+
+        return null;
     }
 }
