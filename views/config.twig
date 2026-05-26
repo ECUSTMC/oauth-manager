@@ -5,6 +5,8 @@
 {% block content %}
 <div class="row">
   <div class="col-md-6">
+    {{ forms.general|raw }}
+
     {{ forms.cleanup|raw }}
 
     {% if has_redundant %}
