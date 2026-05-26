@@ -20,13 +20,13 @@
           <div class="card-body">
             <div class="d-flex align-items-center mb-2">
               <div class="mr-3" style="width: 40px; height: 40px; flex-shrink: 0; position: relative;">
-                <img class="app-favicon rounded" alt=""
-                     data-url="{{ app.url }}"
-                     style="width: 40px; height: 40px; display: none; object-fit: contain; position: absolute; top: 0; left: 0;">
                 <div class="bg-light rounded-circle d-flex align-items-center justify-content-center fallback-icon"
                      style="width: 40px; height: 40px; position: absolute; top: 0; left: 0;">
                   <i class="fas fa-plug text-secondary"></i>
                 </div>
+                <img class="app-favicon rounded" alt=""
+                     data-url="{{ app.url }}"
+                     style="width: 40px; height: 40px; display: none; object-fit: contain; position: absolute; top: 0; left: 0; z-index: 1;">
               </div>
               <div style="min-width: 0; flex: 1;">
                 <h6 class="mb-0 text-truncate">{{ app.name }}</h6>
@@ -110,12 +110,10 @@
     img.onload = function() {
       clearTimeout(timer);
       img.style.display = 'block';
-      fallback.style.display = 'none';
     };
     img.onerror = function() {
       clearTimeout(timer);
       img.style.display = 'none';
-      fallback.style.display = 'flex';
     };
 
     img.src = faviconUrl;
