@@ -2,6 +2,7 @@
 
 namespace OAuthRecord\Controllers;
 
+use App\Models\User;
 use Auth;
 use Laravel\Passport\Client;
 use Laravel\Passport\Token;
@@ -14,7 +15,6 @@ class AppHallController
 
         // Get all active OAuth clients (non-personal, non-revoked)
         $clients = Client::where('personal_access_client', false)
-            ->where('password_client', false)
             ->where('revoked', false)
             ->get();
 
@@ -29,13 +29,20 @@ class AppHallController
             ->unique()
             ->toArray();
 
-        $apps = $clients->map(function ($client) use ($authorizedClientIds) {
+        // Preload creators
+        $creatorIds = $clients->pluck('user_id')->filter()->unique()->toArray();
+        $creators = User::whereIn('uid', $creatorIds)->get()->keyBy('uid');
+
+        $apps = $clients->map(function ($client) use ($authorizedClientIds, $creators) {
+            $creator = $client->user_id ? $creators->get($client->user_id) : null;
+
             return [
                 'id' => $client->id,
                 'name' => $client->name,
                 'domain' => $this->extractDomain($client->redirect),
-                'redirect' => $client->redirect,
+                'url' => $this->extractUrl($client->redirect),
                 'authorized' => in_array($client->id, $authorizedClientIds),
+                'creator' => $creator ? $creator->nickname : null,
                 'user_count' => Token::where('client_id', $client->id)
                     ->where('revoked', false)
                     ->distinct('user_id')
@@ -57,5 +64,23 @@ class AppHallController
         $host = $parsed['host'] ?? null;
 
         return $host;
+    }
+
+    protected function extractUrl(?string $redirect): ?string
+    {
+        if (!$redirect) {
+            return null;
+        }
+
+        $url = trim(explode(',', $redirect)[0]);
+        $parsed = parse_url($url);
+
+        if (isset($parsed['host'])) {
+            $scheme = $parsed['scheme'] ?? 'https';
+
+            return $scheme.'://'.$parsed['host'];
+        }
+
+        return null;
     }
 }

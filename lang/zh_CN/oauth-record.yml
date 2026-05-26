@@ -15,6 +15,7 @@ hall-empty-desc: 当前没有可用的 OAuth 应用
 hall-user-count: ":count 人使用"
 hall-authorized: 已授权
 hall-not-authorized: 未授权
+hall-creator: "创建者: :name"
 
 scopes:
   User_Read: 读取用户信息

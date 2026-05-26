@@ -15,6 +15,7 @@ hall-empty-desc: There are no OAuth applications available
 hall-user-count: ":count user(s)"
 hall-authorized: Authorized
 hall-not-authorized: Not authorized
+hall-creator: "By :name"
 
 scopes:
   User_Read: Read user info
