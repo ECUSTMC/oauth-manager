@@ -1,0 +1,134 @@
+{% extends 'user.base' %}
+
+{% block title %}{{ trans('OAuthRecord::oauth-record.title') }}{% endblock %}
+
+{% block content %}
+<div id="oauth-records">
+  {% if authorizations is empty %}
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="fas fa-shield-alt fa-3x text-muted mb-3"></i>
+        <h5>{{ trans('OAuthRecord::oauth-record.empty-title') }}</h5>
+        <p class="text-muted">{{ trans('OAuthRecord::oauth-record.empty-desc') }}</p>
+      </div>
+    </div>
+  {% else %}
+    {% for auth in authorizations %}
+    <div class="card" data-client-id="{{ auth.client_id }}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="d-flex align-items-center">
+            <div class="mr-3">
+              <div class="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                   style="width: 48px; height: 48px;">
+                <i class="fas fa-plug text-secondary"></i>
+              </div>
+            </div>
+            <div>
+              <h5 class="mb-1">{{ auth.client_name }}</h5>
+              <p class="text-muted mb-1">
+                <i class="fas fa-clock"></i>
+                {{ trans('OAuthRecord::oauth-record.authorized-at') }}: {{ auth.authorized_at }}
+              </p>
+              {% if auth.token_count > 1 %}
+              <p class="text-muted mb-1">
+                <i class="fas fa-key"></i>
+                {{ trans('OAuthRecord::oauth-record.token-count', {count: auth.token_count}) }}
+              </p>
+              {% endif %}
+              {% if auth.scopes is not empty %}
+              <div class="mt-1">
+                {% for scope in auth.scopes %}
+                <span class="badge badge-info mr-1">{{ scope }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          <button class="btn btn-outline-danger btn-revoke-client"
+                  data-client-id="{{ auth.client_id }}"
+                  data-csrf="{{ csrf_token() }}">
+            <i class="fas fa-ban"></i>
+            {{ trans('OAuthRecord::oauth-record.revoke') }}
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<style>
+#oauth-records .card {
+  margin-bottom: 12px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+#oauth-records .card.removing {
+  opacity: 0;
+  transform: translateX(20px);
+}
+#oauth-records .badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block before_foot %}
+<script>
+(function() {
+  var csrfToken = '{{ csrf_token() }}';
+
+  document.querySelectorAll('.btn-revoke-client').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var clientId = this.dataset.clientId;
+      var card = this.closest('.card');
+
+      if (!confirm('{{ trans("OAuthRecord::oauth-record.confirm-revoke") }}')) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+
+      fetch('/user/oauth-record/revoke-client/' + clientId, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+      })
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        if (data.code === 0) {
+          card.classList.add('removing');
+          setTimeout(function() {
+            card.remove();
+            if (document.querySelectorAll('#oauth-records .card').length === 0) {
+              document.getElementById('oauth-records').innerHTML =
+                '<div class="card"><div class="card-body text-center py-5">' +
+                '<i class="fas fa-shield-alt fa-3x text-muted mb-3"></i>' +
+                '<h5>{{ trans("OAuthRecord::oauth-record.empty-title") }}</h5>' +
+                '<p class="text-muted">{{ trans("OAuthRecord::oauth-record.empty-desc") }}</p>' +
+                '</div></div>';
+            }
+          }, 300);
+        } else {
+          alert(data.message || '{{ trans("OAuthRecord::oauth-record.revoke-fail") }}');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-ban"></i> {{ trans("OAuthRecord::oauth-record.revoke") }}';
+        }
+      })
+      .catch(function() {
+        alert('{{ trans("OAuthRecord::oauth-record.revoke-fail") }}');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-ban"></i> {{ trans("OAuthRecord::oauth-record.revoke") }}';
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}
