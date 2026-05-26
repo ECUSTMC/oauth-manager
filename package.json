@@ -1,7 +1,7 @@
 {
-  "name": "oauth-record",
-  "version": "1.0.4",
-  "title": "OAuth 授权记录",
+  "name": "oauth-manager",
+  "version": "2.0.0",
+  "title": "OAuth 管理",
   "description": "OAuthRecord::oauth-record.description",
   "namespace": "OAuthRecord",
   "require": {
