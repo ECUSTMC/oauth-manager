@@ -35,6 +35,23 @@ class ConfigController extends Controller
             // After saving config, redirect back to refresh stats
         })->handle();
 
+        // Yggdrasil Connect cleanup config
+        $yggcForm = Option::form('yggc', trans('OAuthRecord::oauth-record.config.yggc.title'), function (OptionForm $form) {
+            $form->checkbox('oauth_record_yggc_cleanup', trans('OAuthRecord::oauth-record.config.yggc.enable.title'))
+                ->label(trans('OAuthRecord::oauth-record.config.yggc.enable.label'))
+                ->description(trans('OAuthRecord::oauth-record.config.yggc.enable.description'));
+            $form->text('oauth_record_yggc_auth_code_ttl', trans('OAuthRecord::oauth-record.config.yggc.auth-code-ttl.title'))
+                ->description(trans('OAuthRecord::oauth-record.config.yggc.auth-code-ttl.description'));
+            $form->text('oauth_record_yggc_refresh_token_ttl', trans('OAuthRecord::oauth-record.config.yggc.refresh-token-ttl.title'))
+                ->description(trans('OAuthRecord::oauth-record.config.yggc.refresh-token-ttl.description'));
+            $form->text('oauth_record_yggc_device_code_ttl', trans('OAuthRecord::oauth-record.config.yggc.device-code-ttl.title'))
+                ->description(trans('OAuthRecord::oauth-record.config.yggc.device-code-ttl.description'));
+            $form->text('oauth_record_yggc_grant_ttl', trans('OAuthRecord::oauth-record.config.yggc.grant-ttl.title'))
+                ->description(trans('OAuthRecord::oauth-record.config.yggc.grant-ttl.description'));
+            $form->text('oauth_record_yggc_interaction_ttl', trans('OAuthRecord::oauth-record.config.yggc.interaction-ttl.title'))
+                ->description(trans('OAuthRecord::oauth-record.config.yggc.interaction-ttl.description'));
+        })->handle();
+
         // Show statistics about revoked tokens
         $db = $this->getPassportConnection();
 
@@ -48,12 +65,30 @@ class ConfigController extends Controller
             'codes' => $revokedAuthCodeCount,
         ]), 'info');
 
+        // Yggdrasil Connect stats
+        $yggcStats = ['total' => 0];
+        if (option('oauth_record_yggc_cleanup')) {
+            $yggcStats = $this->getYggcRevokedCounts($db);
+
+            if ($yggcStats['total'] > 0) {
+                $yggcForm->addMessage(trans('OAuthRecord::oauth-record.config.yggc-stats', [
+                    'auth_codes' => $yggcStats['auth_codes'],
+                    'refresh_tokens' => $yggcStats['refresh_tokens'],
+                    'device_codes' => $yggcStats['device_codes'],
+                    'grants' => $yggcStats['grants'],
+                    'interactions' => $yggcStats['interactions'],
+                ]), 'info');
+            }
+        }
+
         // Count redundant tokens (active tokens per client beyond the first one)
         $redundantCount = $this->countRedundantTokens();
 
+        $hasRevoked = ($revokedTokenCount + $revokedRefreshTokenCount + $revokedAuthCodeCount + $yggcStats['total']) > 0;
+
         return view('OAuthRecord::config', [
-            'forms' => ['general' => $generalForm, 'cleanup' => $cleanupForm],
-            'has_revoked' => ($revokedTokenCount + $revokedRefreshTokenCount + $revokedAuthCodeCount) > 0,
+            'forms' => ['general' => $generalForm, 'cleanup' => $cleanupForm, 'yggc' => $yggcForm],
+            'has_revoked' => $hasRevoked,
             'has_redundant' => $redundantCount > 0,
             'redundant_count' => $redundantCount,
         ]);
@@ -98,11 +133,19 @@ class ConfigController extends Controller
             ->where('revoked', true)
             ->delete();
 
-        return json(trans('OAuthRecord::oauth-record.config.cleanup-result', [
+        $result = [
             'tokens' => $tokenDeleted,
             'refresh' => $refreshDeleted,
             'codes' => $codeDeleted,
-        ]), 0);
+        ];
+
+        // Clean up Yggdrasil Connect tables
+        if (option('oauth_record_yggc_cleanup')) {
+            $yggcDeleted = $this->cleanupYggc($db);
+            $result = array_merge($result, $yggcDeleted);
+        }
+
+        return json(trans('OAuthRecord::oauth-record.config.cleanup-result', $result), 0);
     }
 
     /**
@@ -176,6 +219,137 @@ class ConfigController extends Controller
         return $groups->sum(function ($group) {
             return $group->cnt - 1;
         });
+    }
+
+    /**
+     * Get the TTL value for a yggc config option, falling back to yggdrasil-connect's option, then to default.
+     */
+    protected function getYggcTtl(string $optionName, int $default): int
+    {
+        $value = option($optionName);
+
+        if ($value !== null && $value !== '') {
+            return max(1, (int) $value);
+        }
+
+        // Fall back to yggdrasil-connect's own option if available
+        $yggcOptionMap = [
+            'oauth_record_yggc_auth_code_ttl' => null,
+            'oauth_record_yggc_refresh_token_ttl' => 'ygg_token_expire_2',
+            'oauth_record_yggc_device_code_ttl' => 'ygg_device_code_expires_in',
+            'oauth_record_yggc_grant_ttl' => 'ygg_grant_expires_in',
+            'oauth_record_yggc_interaction_ttl' => null,
+        ];
+
+        $fallback = $yggcOptionMap[$optionName] ?? null;
+        if ($fallback) {
+            $fallbackValue = option($fallback);
+            if ($fallbackValue !== null && $fallbackValue !== '') {
+                return max(1, (int) $fallbackValue);
+            }
+        }
+
+        return $default;
+    }
+
+    /**
+     * Get revoked/expired counts from Yggdrasil Connect tables.
+     */
+    protected function getYggcRevokedCounts($db): array
+    {
+        $stats = [
+            'auth_codes' => 0,
+            'refresh_tokens' => 0,
+            'device_codes' => 0,
+            'grants' => 0,
+            'interactions' => 0,
+            'total' => 0,
+        ];
+
+        try {
+            $authCodeTtl = $this->getYggcTtl('oauth_record_yggc_auth_code_ttl', 600);
+            $stats['auth_codes'] = $db->table('yggc_authorization_codes')
+                ->where('consumed', true)
+                ->orWhere('created_at', '<', now()->subSeconds($authCodeTtl))
+                ->count();
+
+            $refreshTokenTtl = $this->getYggcTtl('oauth_record_yggc_refresh_token_ttl', 604800);
+            $stats['refresh_tokens'] = $db->table('yggc_refresh_tokens')
+                ->where('consumed', true)
+                ->orWhere('created_at', '<', now()->subSeconds($refreshTokenTtl))
+                ->count();
+
+            $deviceCodeTtl = $this->getYggcTtl('oauth_record_yggc_device_code_ttl', 600);
+            $stats['device_codes'] = $db->table('yggc_device_codes')
+                ->where('consumed', true)
+                ->orWhere('created_at', '<', now()->subSeconds($deviceCodeTtl))
+                ->count();
+
+            $grantTtl = $this->getYggcTtl('oauth_record_yggc_grant_ttl', 86400);
+            $stats['grants'] = $db->table('yggc_grants')
+                ->where('created_at', '<', now()->subSeconds($grantTtl))
+                ->count();
+
+            $interactionTtl = $this->getYggcTtl('oauth_record_yggc_interaction_ttl', 86400);
+            $stats['interactions'] = $db->table('yggc_interactions')
+                ->where('created_at', '<', now()->subSeconds($interactionTtl))
+                ->count();
+
+            $stats['total'] = $stats['auth_codes'] + $stats['refresh_tokens']
+                + $stats['device_codes'] + $stats['grants'] + $stats['interactions'];
+        } catch (\Exception $e) {
+            // Silently ignore if yggc tables are not accessible
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Clean up expired/consumed records from Yggdrasil Connect tables.
+     */
+    protected function cleanupYggc($db): array
+    {
+        $result = [
+            'yggc_auth_codes' => 0,
+            'yggc_refresh_tokens' => 0,
+            'yggc_device_codes' => 0,
+            'yggc_grants' => 0,
+            'yggc_interactions' => 0,
+        ];
+
+        try {
+            $authCodeTtl = $this->getYggcTtl('oauth_record_yggc_auth_code_ttl', 600);
+            $result['yggc_auth_codes'] = $db->table('yggc_authorization_codes')
+                ->where('consumed', true)
+                ->orWhere('created_at', '<', now()->subSeconds($authCodeTtl))
+                ->delete();
+
+            $refreshTokenTtl = $this->getYggcTtl('oauth_record_yggc_refresh_token_ttl', 604800);
+            $result['yggc_refresh_tokens'] = $db->table('yggc_refresh_tokens')
+                ->where('consumed', true)
+                ->orWhere('created_at', '<', now()->subSeconds($refreshTokenTtl))
+                ->delete();
+
+            $deviceCodeTtl = $this->getYggcTtl('oauth_record_yggc_device_code_ttl', 600);
+            $result['yggc_device_codes'] = $db->table('yggc_device_codes')
+                ->where('consumed', true)
+                ->orWhere('created_at', '<', now()->subSeconds($deviceCodeTtl))
+                ->delete();
+
+            $grantTtl = $this->getYggcTtl('oauth_record_yggc_grant_ttl', 86400);
+            $result['yggc_grants'] = $db->table('yggc_grants')
+                ->where('created_at', '<', now()->subSeconds($grantTtl))
+                ->delete();
+
+            $interactionTtl = $this->getYggcTtl('oauth_record_yggc_interaction_ttl', 86400);
+            $result['yggc_interactions'] = $db->table('yggc_interactions')
+                ->where('created_at', '<', now()->subSeconds($interactionTtl))
+                ->delete();
+        } catch (\Exception $e) {
+            // Silently ignore if yggc tables are not accessible
+        }
+
+        return $result;
     }
 
     protected function getPassportConnection()

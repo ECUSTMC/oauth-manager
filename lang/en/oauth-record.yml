@@ -61,7 +61,8 @@ config:
     label: Enable auto delete
     description: Physically delete revoked tokens from the database when a user views their authorization records, freeing up storage space.
   stats: "Revoked records in database: Access Token: :tokens, Refresh Token: :refresh, Auth Code: :codes"
-  cleanup-result: "Cleanup complete! Deleted Access Token: :tokens, Refresh Token: :refresh, Auth Code: :codes"
+  yggc-stats: "Yggdrasil Connect cleanable records: Auth Codes: :auth_codes, Refresh Tokens: :refresh_tokens, Device Codes: :device_codes, Grants: :grants, Interactions: :interactions"
+  cleanup-result: "Cleanup complete! Deleted Access Token: :tokens, Refresh Token: :refresh, Auth Code: :codes, Yggc Auth Codes: :yggc_auth_codes, Yggc Refresh Tokens: :yggc_refresh_tokens, Yggc Device Codes: :yggc_device_codes, Yggc Grants: :yggc_grants, Yggc Interactions: :yggc_interactions"
   cleanup-redundant-result: "Cleanup complete! Revoked :count redundant tokens"
   cleanup-now:
     title: Cleanup Revoked Records
@@ -75,3 +76,24 @@ config:
     button: Cleanup Redundant Tokens Now
     confirm: Are you sure you want to cleanup all redundant tokens? Only the latest token per user per application will be kept; the rest will be revoked.
     fail: Cleanup failed, please try again
+  yggc:
+    title: Yggdrasil Connect Cleanup
+    enable:
+      title: Enable Yggdrasil Connect Cleanup
+      label: Enable
+      description: When enabled, expired authorization codes, refresh tokens, device codes, grants, and interaction sessions from the Yggdrasil Connect plugin will be cleaned up. Requires Yggdrasil Connect plugin to be installed.
+    auth-code-ttl:
+      title: Authorization Code TTL
+      description: "Authorization codes older than this (in seconds) are considered expired and will be cleaned up. Leave empty to use default 600 (10 minutes)."
+    refresh-token-ttl:
+      title: Refresh Token TTL
+      description: "Refresh tokens older than this (in seconds) are considered expired and will be cleaned up. Leave empty to fall back to Yggdrasil Connect's refresh token expiry setting, default 604800 (7 days)."
+    device-code-ttl:
+      title: Device Code TTL
+      description: "Device codes older than this (in seconds) are considered expired and will be cleaned up. Leave empty to fall back to Yggdrasil Connect's device code expiry setting, default 600 (10 minutes)."
+    grant-ttl:
+      title: Grant TTL
+      description: "Grants older than this (in seconds) are considered expired and will be cleaned up. Leave empty to fall back to Yggdrasil Connect's grant expiry setting, default 86400 (1 day)."
+    interaction-ttl:
+      title: Interaction Session TTL
+      description: "Interaction sessions older than this (in seconds) are considered expired and will be cleaned up. Yggdrasil Connect has no built-in cleanup for these. Leave empty to use default 86400 (1 day)."

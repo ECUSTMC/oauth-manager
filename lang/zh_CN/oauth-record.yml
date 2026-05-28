@@ -61,7 +61,8 @@ config:
     label: 启用自动删除
     description: 用户查看授权记录时自动从数据库中删除该用户已吊销的令牌，释放存储空间。
   stats: "当前数据库中已吊销的记录：Access Token :tokens 条，Refresh Token :refresh 条，Auth Code :codes 条"
-  cleanup-result: "清理完成！已删除 Access Token :tokens 条，Refresh Token :refresh 条，Auth Code :codes 条"
+  yggc-stats: "Yggdrasil Connect 可清理记录：授权码 :auth_codes 条，刷新令牌 :refresh_tokens 条，设备码 :device_codes 条，授权许可 :grants 条，交互会话 :interactions 条"
+  cleanup-result: "清理完成！已删除 Access Token :tokens 条，Refresh Token :refresh 条，Auth Code :codes 条，Yggc 授权码 :yggc_auth_codes 条，Yggc 刷新令牌 :yggc_refresh_tokens 条，Yggc 设备码 :yggc_device_codes 条，Yggc 授权许可 :yggc_grants 条，Yggc 交互会话 :yggc_interactions 条"
   cleanup-redundant-result: "清理完成！已吊销冗余令牌 :count 条"
   cleanup-now:
     title: 清理已吊销记录
@@ -75,3 +76,24 @@ config:
     button: 立即清理冗余令牌
     confirm: 确定要清理全站所有冗余令牌吗？每个用户每个应用仅保留最新一条令牌，其余将被吊销。
     fail: 清理失败，请重试
+  yggc:
+    title: Yggdrasil Connect 清理
+    enable:
+      title: 启用 Yggdrasil Connect 清理
+      label: 启用
+      description: 启用后将清理 Yggdrasil Connect 插件产生的过期授权码、刷新令牌、设备码、授权许可和交互会话记录。需已安装 Yggdrasil Connect 插件。
+    auth-code-ttl:
+      title: 授权码过期时间
+      description: "授权码超过此时间（秒）视为过期，将被清理。留空则使用默认值 600（10 分钟）。"
+    refresh-token-ttl:
+      title: 刷新令牌过期时间
+      description: "刷新令牌超过此时间（秒）视为过期，将被清理。留空则回退到 Yggdrasil Connect 的刷新令牌过期设置，默认 604800（7 天）。"
+    device-code-ttl:
+      title: 设备码过期时间
+      description: "设备码超过此时间（秒）视为过期，将被清理。留空则回退到 Yggdrasil Connect 的设备码过期设置，默认 600（10 分钟）。"
+    grant-ttl:
+      title: 授权许可过期时间
+      description: "授权许可超过此时间（秒）视为过期，将被清理。留空则回退到 Yggdrasil Connect 的授权过期设置，默认 86400（1 天）。"
+    interaction-ttl:
+      title: 交互会话过期时间
+      description: "交互会话超过此时间（秒）视为过期，将被清理。Yggdrasil Connect 本身无清理机制，建议设置合理值。留空则使用默认值 86400（1 天）。"
