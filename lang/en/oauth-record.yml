@@ -38,6 +38,7 @@ scopes:
   profile: Basic profile
   email: Email address
   offline_access: Offline access
+  campus_status: Campus status
 
 config:
   general:

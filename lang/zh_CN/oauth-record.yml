@@ -38,6 +38,7 @@ scopes:
   profile: 基本资料
   email: 邮箱地址
   offline_access: 离线访问
+  campus_status: 在校状态
 
 config:
   general:
